@@ -33,7 +33,17 @@ STANDARD_COLORS = {
 
 
 def _make_solved_facelets():
-    """完成状態のステッカー配列（6 faces x 3 x 3）を作成して返す。"""
+    """
+    完成状態のステッカー配列（6 faces x 3 x 3）を作成して返す。
+    return
+    type f<class 'list'>
+    [[['white', 'white', 'white'], ['white', 'white', 'white'], ['white', 'white', 'white']],
+    [['yellow', 'yellow', 'yellow'], ['yellow', 'yellow', 'yellow'], ['yellow', 'yellow', 'yellow']],
+    [['red', 'red', 'red'], ['red', 'red', 'red'], ['red', 'red', 'red']],
+     [['orange', 'orange', 'orange'], ['orange', 'orange', 'orange'], ['orange', 'orange', 'orange']],
+      [['green', 'green', 'green'], ['green', 'green', 'green'], ['green', 'green', 'green']],
+      [['blue', 'blue', 'blue'], ['blue', 'blue', 'blue'], ['blue', 'blue', 'blue']]]
+    """
     faces = []
     for name in FACE_NAMES:
         color = STANDARD_COLORS[name]
@@ -55,13 +65,31 @@ def state_to_facelets(cp, co, ep, eo):
       faces: list of 6 faces, each is 3x3 list of色名またはインデックス
     """
     # ベースは完成図の facelets（色名）を使用して、各コーナー/エッジが持つ "固有色" を取得する
+    # 立体の完成図を取得
     base_faces = _make_solved_facelets()
 
     # ヘルパ: faces を mutable に作る
+    # 描画用の配列 , 初期化
     faces = [[ [None for _ in range(3)] for _ in range(3)] for _ in range(6)]
 
     # README に合わせたコーナー -> (face, r, c) の対応（各 corner の orientation=0 の時に
     # U/D 側の色が最初に来るように (UD, other1, other2) の順で指定）
+    """
+    コーナーピースの各インデックスに対応するシール座標 (corner_facelet_pos) を定義
+    - 0〜7 番コーナーそれぞれについて (faceIndex, row, col) のタプルを3つずつ持つ。
+    - 配列順は (U/D 方向の色, その他1, その他2) になるよう並べている。これは向き計算（回転）を簡単にするため。
+    
+    おそらくこの辺から対応が可笑しいため想定した動作ができていない。
+    
+    最初の数字は色の番号
+    # 顔の順序: U, D, R, L, F, B
+    FACE_NAMES = ["U", "D", "R", "L", "F", "B"]
+    
+    行・列は 0 始まり（0,1,2）
+    row 0 は上段、row 2 は下段
+    col 0 は左列、col 2 は右列
+    中央は常に (row=1, col=1)
+    """
     corner_facelet_pos = [
         # 0: U, B, L
         ((0,0,0), (5,0,2), (3,0,0)),
@@ -81,6 +109,13 @@ def state_to_facelets(cp, co, ep, eo):
         ((1,0,0), (5,2,2), (3,2,0)),
     ]
 
+    """
+    エッジピースの各インデックスに対応するシール座標 (edge_facelet_pos) を定義
+    - 0〜11 番エッジそれぞれについて (faceIndex, row, col) のタプルを2つ。
+    - 定義順が内部ロジックの“エッジ番号”になる（README との対応に注意が必要）。
+    
+    この辺から対応が可笑しいため想定した動作ができていない。
+    """
     # エッジ -> (face, r, c) の対応（2要素）
     edge_facelet_pos = [
         # 0: U - B (UB)
@@ -124,6 +159,19 @@ def state_to_facelets(cp, co, ep, eo):
 
     # まずは全て None の faces を用意
     # corners を配置
+    """
+    コーナーの配置ループ
+    for pos in range(8):
+    - pos は「現在のコーナー位置」（0〜7）。
+    - cubie = cp[pos] で「その位置に存在するコーナーピース番号」を取り出す。
+    - home_colors = corner_home_colors[cubie] で本来色を取得。
+    - orient = co[pos] % 3 で向きを取得。
+    - placed_colors = [home_colors[(i - orient) % 3] for i in range(3)]
+    - → 向き (co) を考慮して色配列を回転。
+    - orient=0 なら並びそのまま。 orient=1,2 ならインデックスをずらす。
+    - (i - orient) を使っているので「左方向回転」的な符号系。
+    - その回転後の3色を、pos の位置の座標 trip = corner_facelet_pos[pos] に埋める。
+    """
     for pos in range(8):
         cubie = cp[pos]
         orient = co[pos] % 3
@@ -139,6 +187,15 @@ def state_to_facelets(cp, co, ep, eo):
             faces[f][r][c] = placed_colors[idx]
 
     # edges を配置
+    """
+    エッジの配置ループ
+    for pos in range(12):
+    - cubie = ep[pos] でその位置にあるエッジピース番号。
+    - home = edge_home_colors[cubie] → 2色セット。
+    - flip = eo[pos] % 2 → 反転なら順番を入れ替える。
+    - placed = [home[0], home[1]] if flip==0 else [home[1], home[0]]
+    - edge_facelet_pos[pos] の2座標へ書き込む。    
+    """
     for pos in range(12):
         cubie = ep[pos]
         flip = eo[pos] % 2
@@ -261,6 +318,7 @@ def draw_cube(value=None, figsize=(6, 6), save_path=None):
 
 
 if __name__ == "__main__":
+    """
     # コマンドライン引数: デフォルトで GUI を表示 (plt.show)。
     # --save / -s を指定するとファイルに保存して GUI は表示しない。
     parser = argparse.ArgumentParser(description="3D ルービックキューブ描画デモ")
@@ -268,8 +326,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     faces = _make_solved_facelets()
-    # 例: 前面を赤くするデモ（任意）
-    faces[2] = [[STANDARD_COLORS["R"] for _ in range(3)] for _ in range(3)]
 
     if args.save:
         draw_cube(faces, save_path=args.save)
@@ -277,3 +333,7 @@ if __name__ == "__main__":
     else:
         draw_cube(value=test_value)
         plt.show()
+    """
+    value = _make_solved_facelets()
+    print(f"type f{type(value)}")
+    print(value)
