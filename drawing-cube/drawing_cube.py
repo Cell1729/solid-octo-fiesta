@@ -12,6 +12,7 @@ solved = (
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 )
 # if __name__ == "__main__": にあるdraw_cube()に値を入れる。
+# R2した状態
 test_value = (
     [0, 6, 5, 3, 4, 2, 1, 7],
     [0, 0, 0, 0, 0, 0, 0, 0],
@@ -40,9 +41,9 @@ def _make_solved_facelets():
     [[['white', 'white', 'white'], ['white', 'white', 'white'], ['white', 'white', 'white']],
     [['yellow', 'yellow', 'yellow'], ['yellow', 'yellow', 'yellow'], ['yellow', 'yellow', 'yellow']],
     [['red', 'red', 'red'], ['red', 'red', 'red'], ['red', 'red', 'red']],
-     [['orange', 'orange', 'orange'], ['orange', 'orange', 'orange'], ['orange', 'orange', 'orange']],
-      [['green', 'green', 'green'], ['green', 'green', 'green'], ['green', 'green', 'green']],
-      [['blue', 'blue', 'blue'], ['blue', 'blue', 'blue'], ['blue', 'blue', 'blue']]]
+    [['orange', 'orange', 'orange'], ['orange', 'orange', 'orange'], ['orange', 'orange', 'orange']],
+    [['green', 'green', 'green'], ['green', 'green', 'green'], ['green', 'green', 'green']],
+    [['blue', 'blue', 'blue'], ['blue', 'blue', 'blue'], ['blue', 'blue', 'blue']]]
     """
     faces = []
     for name in FACE_NAMES:
@@ -54,7 +55,6 @@ def _make_solved_facelets():
 def state_to_facelets(cp, co, ep, eo):
     """
     cp/co/ep/eo から faces (6 x 3 x 3) のステッカー配列に変換する。
-    README のナンバリング図を基にしたマッピングを使う（簡易実装）。
 
     入力:
       cp: list length 8
@@ -79,34 +79,30 @@ def state_to_facelets(cp, co, ep, eo):
     - 0〜7 番コーナーそれぞれについて (faceIndex, row, col) のタプルを3つずつ持つ。
     - 配列順は (U/D 方向の色, その他1, その他2) になるよう並べている。これは向き計算（回転）を簡単にするため。
     
-    おそらくこの辺から対応が可笑しいため想定した動作ができていない。
-    
     最初の数字は色の番号
     # 顔の順序: U, D, R, L, F, B
     FACE_NAMES = ["U", "D", "R", "L", "F", "B"]
     
-    行・列は 0 始まり（0,1,2）
-    row 0 は上段、row 2 は下段
-    col 0 は左列、col 2 は右列
-    中央は常に (row=1, col=1)
+    (row, col)
+    その面の正面から見て上か下か
+    row = 0 上段
+    row = 1 中段
+    row = 2 下段
+    
+    その面を正面から見たときに左か右か
+    col = 0 左列
+    col = 1 
+    col = 2 右列
     """
     corner_facelet_pos = [
-        # 0: U, B, L
-        ((0,0,0), (5,0,2), (3,0,0)),
-        # 1: U, B, R
-        ((0,0,2), (5,0,0), (2,0,2)),
-        # 2: U, F, R
-        ((0,2,2), (2,0,0), (4,0,2)),
-        # 3: U, F, L
-        ((0,2,0), (4,0,0), (3,0,2)),
-        # 4: D, L, F
-        ((1,2,0), (3,2,2), (4,2,0)),
-        # 5: D, F, R
-        ((1,2,2), (4,2,2), (2,2,0)),
-        # 6: D, R, B
-        ((1,0,2), (2,2,2), (5,2,0)),
-        # 7: D, B, L
-        ((1,0,0), (5,2,2), (3,2,0)),
+        ((0, 0, 0), (3, 0, 0), (5, 0, 2)),
+        ((0, 0, 2), (5, 0, 0), (2, 0, 2)),
+        ((0, 2, 2), (2, 0, 0), (4, 0, 2)),
+        ((0, 2, 0), (4, 0, 0), (3, 0, 2)),
+        ((1, 2, 0), (5, 2, 2), (3, 2, 0)),
+        ((1, 2, 2), (2, 2, 2), (5, 2, 0)),
+        ((1, 0, 2), (4, 2, 2), (2, 2, 0)),
+        ((1, 0, 0), (3, 2, 2), (4, 2, 0)),
     ]
 
     """
@@ -114,72 +110,75 @@ def state_to_facelets(cp, co, ep, eo):
     - 0〜11 番エッジそれぞれについて (faceIndex, row, col) のタプルを2つ。
     - 定義順が内部ロジックの“エッジ番号”になる（README との対応に注意が必要）。
     
-    この辺から対応が可笑しいため想定した動作ができていない。
+    (row, col)
+    その面を正面から見て上中下のどこか
+    row = 0 上段
+    row = 1 中段
+    row = 2 下段
+    
+    その面を正面から見たときに左か中央か右か
+    col = 0 左列
+    col = 1 中央列
+    col = 2 右列
     """
     # エッジ -> (face, r, c) の対応（2要素）
     edge_facelet_pos = [
         # 0: U - B (UB)
-        ((0,0,1), (5,0,1)),
+        ((0, 0, 1), (5, 0, 1)),
         # 1: U - R (UR)
-        ((0,1,2), (2,0,1)),
+        ((0, 1, 2), (2, 0, 1)),
         # 2: U - F (UF)
-        ((0,2,1), (4,0,1)),
+        ((0, 2, 1), (4, 0, 1)),
         # 3: U - L (UL)
-        ((0,1,0), (3,0,1)),
+        ((0, 1, 0), (3, 0, 1)),
         # 4: F - R (FR)
-        ((4,1,2), (2,1,0)),
+        ((4, 1, 2), (2, 1, 0)),
         # 5: R - B (RB)
-        ((2,1,2), (5,1,0)),
+        ((2, 1, 2), (5, 1, 0)),
         # 6: B - L (BL)
-        ((5,1,2), (3,1,0)),
+        ((5, 1, 2), (3, 1, 0)),
         # 7: L - F (LF)
-        ((3,1,2), (4,1,0)),
+        ((3, 1, 2), (4, 1, 0)),
         # 8: D - F (DF)
-        ((1,2,1), (4,2,1)),
+        ((1, 2, 1), (4, 2, 1)),
         # 9: D - R (DR)
-        ((1,1,2), (2,2,1)),
+        ((1, 1, 2), (2, 2, 1)),
         # 10: D - B (DB)
-        ((1,0,1), (5,2,1)),
+        ((1, 0, 1), (5, 2, 1)),
         # 11: D - L (DL)
-        ((1,1,0), (3,2,1)),
+        ((1, 1, 0), (3, 2, 1)),
     ]
 
     # solved (home) colors for each corner/edge index (取っておく)
     corner_home_colors = []
     for ci in range(8):
+        # 完成状態のコーナー情報を取得
         trip = corner_facelet_pos[ci]
+        # その3つの位置から色を取得
+        """
+        変数としてはこの部分 (関数の最初の方に定義されている)
+        base_faces = _make_solved_facelets()
+        
+        corner 0 の trip = ((0,0,0), (5,0,2), (3,0,0))
+        → colors = [ base_faces[0][0][0], base_faces[5][0][2], base_faces[3][0][0] ] 
+        → 例えば STANDARD_COLORS の設定なら ['white', 'blue', 'orange']
+        """
         colors = [ base_faces[f][r][c] for (f,r,c) in trip ]
+        # corner_home_colorsに追加
         corner_home_colors.append(colors)
 
     edge_home_colors = []
     for ei in range(12):
+        # コーナーと似たことしている
         a,b = edge_facelet_pos[ei]
         colors = [ base_faces[a[0]][a[1]][a[2]], base_faces[b[0]][b[1]][b[2]] ]
         edge_home_colors.append(colors)
 
-    # まずは全て None の faces を用意
     # corners を配置
-    """
-    コーナーの配置ループ
-    for pos in range(8):
-    - pos は「現在のコーナー位置」（0〜7）。
-    - cubie = cp[pos] で「その位置に存在するコーナーピース番号」を取り出す。
-    - home_colors = corner_home_colors[cubie] で本来色を取得。
-    - orient = co[pos] % 3 で向きを取得。
-    - placed_colors = [home_colors[(i - orient) % 3] for i in range(3)]
-    - → 向き (co) を考慮して色配列を回転。
-    - orient=0 なら並びそのまま。 orient=1,2 ならインデックスをずらす。
-    - (i - orient) を使っているので「左方向回転」的な符号系。
-    - その回転後の3色を、pos の位置の座標 trip = corner_facelet_pos[pos] に埋める。
-    """
     for pos in range(8):
         cubie = cp[pos]
         orient = co[pos] % 3
-        # cubie のホームでの色配列
         home_colors = corner_home_colors[cubie]
-        # orientation を考慮して home_colors を回転させる
-        # orientation=0 => home_colors ordered as (UD, x, y)
-        # orientation=1 => rotate left
         placed_colors = [ home_colors[(i - orient) % 3] for i in range(3) ]
         # 置く位置の facelets
         trip = corner_facelet_pos[pos]
@@ -211,13 +210,6 @@ def state_to_facelets(cp, co, ep, eo):
     # 中央は各面センターの色（変わらない）を埋める
     for fi, name in enumerate(FACE_NAMES):
         faces[fi][1][1] = STANDARD_COLORS[name]
-
-    # もし None が残っていれば完成図の色で埋める
-    for fi in range(6):
-        for r in range(3):
-            for c in range(3):
-                if faces[fi][r][c] is None:
-                    faces[fi][r][c] = base_faces[fi][r][c]
 
     return faces
 
@@ -318,7 +310,14 @@ def draw_cube(value=None, figsize=(6, 6), save_path=None):
 
 
 if __name__ == "__main__":
-    """
+    # 完成状態からR
+    test_R = (
+        [0, 2, 6, 3, 4, 1, 5, 7],
+        [0, 1, 2, 0, 0, 2, 1, 0],
+        [0, 5, 9, 3, 4, 2, 6, 7, 8, 1, 10, 11],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    )
+
     # コマンドライン引数: デフォルトで GUI を表示 (plt.show)。
     # --save / -s を指定するとファイルに保存して GUI は表示しない。
     parser = argparse.ArgumentParser(description="3D ルービックキューブ描画デモ")
@@ -331,9 +330,5 @@ if __name__ == "__main__":
         draw_cube(faces, save_path=args.save)
         print(f"Saved demo image to {args.save}")
     else:
-        draw_cube(value=test_value)
+        draw_cube(value=test_R)
         plt.show()
-    """
-    value = _make_solved_facelets()
-    print(f"type f{type(value)}")
-    print(value)
